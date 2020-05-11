@@ -1,4 +1,4 @@
-// Powered by Infostretch 
+
 
 timestamps {
 
