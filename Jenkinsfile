@@ -26,26 +26,24 @@ ls -lrt
 java -version
 
 
-sudo -S docker image ls
-sudo -S docker container ls
+docker image ls
+docker container ls
 
-sudo -S docker stop $(sudo -S docker ps -a -q)
-sudo -S docker rm $(sudo -S docker ps -a -q)
+docker stop $(sudo -S docker ps -a -q)
+docker rm $(sudo -S docker ps -a -q)
 
-sudo  -S  docker images | egrep "latest|SNAPSHOT" | awk '{print $1 ":" $2}' | xargs sudo -S  docker rmi -f
+docker images | egrep "latest|SNAPSHOT" | awk '{print $1 ":" $2}' | xargs sudo -S  docker rmi -f
 
-sudo -S docker build -t spring-boot-websocket-chat-demo .
-sudo -S docker run -d -p 4000:8080 spring-boot-websocket-chat-demo
+docker build -t spring-boot-websocket-chat-demo .
+docker run -d -p 4000:8080 spring-boot-websocket-chat-demo
 
-sudo -S docker image ls
-sudo -S docker container ls
+docker image ls
+docker container ls
 
 
-sudo -S docker tag spring-boot-websocket-chat-demo praveenkumarnagarajan/spring-boot-websocket-chat-demo:0.0.1-SNAPSHOT
+docker tag spring-boot-websocket-chat-demo praveenkumarnagarajan/spring-boot-websocket-chat-demo:0.0.1-SNAPSHOT
 
-cat ~/pass.txt | sudo -S docker login --username praveenkumarnagarajan --password-stdin
 
-sudo -S docker push praveenkumarnagarajan/spring-boot-websocket-chat-demo:0.0.1-SNAPSHOT 
  ''' 
 	}
 }
