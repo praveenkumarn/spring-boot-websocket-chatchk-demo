@@ -1,50 +1,62 @@
+pipeline {
+agent any
+stages {
 
-
-timestamps {
-
-node ('Docker') { 
-
-	deleteDir()
-	stage ('Docker_Push - Checkout') {
- 	 checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'GitHub', url: 'https://github.com/praveenkumarn/spring-boot-websocket-chat-demo']]]) 
+	stage ('DS-Build-REP-Checkout') {
+	    steps {
+	        checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: '7efa7909-5ad8-4648-ab7f-153e0e66a285', url: 'https://github.com/praveenkumarn/spring-boot-websocket-chatting-demo/']]]) 
 	}
-	stage ('Docker_Push - Build') {
- 	
-// Unable to convert a build step referring to "hudson.plugins.ws__cleanup.PreBuildCleanup". Please verify and convert manually if required.		// Maven build step
-	withMaven(maven: 'maven') { 
- 			if(isUnix()) {
- 				sh "mvn -f pom.xml clean package " 
-			} else { 
- 				bat "mvn -f pom.xml clean package " 
-			} 
- 		}		// Shell build step
-sh ''' 
-#!/bin/bash
+	}
+	stage ('DS-Build-REP-CI') {
+	    steps {
+		// Maven build step
+	        withMaven(maven: 'M2_HOME') { 
+	                                       sh "mvn test org.codehaus.mojo:cobertura-maven-plugin:2.7:cobertura -Dcobertura.report.format=xml"
+ 			 		       sh "mvn clean package" 
+			 		     } 
+ 		} 
+	}
+stage ('DS-Build-REP-Deploy') {
+    steps {
+ sshPublisher(publishers: [sshPublisherDesc(configName: 'Docker Swarm Manager', transfers: [sshTransfer(cleanRemote: false, excludes: '', execCommand: 'ls -lrt', execTimeout: 120000, flatten: false, makeEmptyDirs: false, noDefaultExcludes: false, patternSeparator: '[, ]+', remoteDirectory: '', remoteDirectorySDF: false, removePrefix: '', sourceFiles: '*,src/**/*'), sshTransfer(cleanRemote: false, excludes: '', execCommand: '''#!/bin/bash
 pwd
 id
-ls -lrt
-java -version
+tym=$(date +"%m-%d-%Y-%H-%M")
+echo $tym
 
+docker service rm spring-boot-websocket-chat-demo-svc
+docker network rm -f epicnetwork
 
-docker image ls
-docker container ls
+docker stop $(docker ps -a -q)
+docker rm -f $(docker ps -a -q)
 
-docker stop $(sudo -S docker ps -a -q)
-docker rm $(sudo -S docker ps -a -q)
+#docker rm --force 172.31.44.24/spring-boot-websocket-chat-demo:latest_$tym
+#docker rmi spring-boot-websocket-chat-demo:latest_$tym
 
-docker images | egrep "latest|SNAPSHOT" | awk '{print $1 ":" $2}' | xargs sudo -S  docker rmi -f
+#docker stop $(docker ps | grep ":8020" | awk \'{print $1}\') 
+docker images | egrep "latest|SNAPSHOT" | awk \'{print $1 ":" $2}\' | xargs docker rmi -f
+docker network ls | grep overlay 
 
+docker network create -d overlay epicnetwork
+docker network ls | grep overlay 
 docker build -t spring-boot-websocket-chat-demo .
-docker run -d -p 4000:8080 spring-boot-websocket-chat-demo
+docker tag spring-boot-websocket-chat-demo:latest 172.31.44.24:8083/spring-boot-websocket-chat-demo:latest_$tym
 
-docker image ls
-docker container ls
+cat ~/passwd.txt | docker login 172.31.44.24:8083 -u admin --password-stdin
+docker push 172.31.44.24:8083/spring-boot-websocket-chat-demo:latest_$tym
 
+docker pull 172.31.44.24:8083/spring-boot-websocket-chat-demo:latest_$tym
 
-docker tag spring-boot-websocket-chat-demo praveenkumarnagarajan/spring-boot-websocket-chat-demo:0.0.1-SNAPSHOT
+docker service create --replicas 2  --network epicnetwork --name spring-boot-websocket-chat-demo-svc --publish 8020:8080  172.31.44.24:8083/spring-boot-websocket-chat-demo:latest_$tym
+#docker run -d -p 8010:8080  --name spring-boot-websocket-chat-demo-svc 172.31.44.24:8083/spring-boot-websocket-chat-demo:latest_$tym
 
+docker container ls -a
+docker service ls
+docker service ps spring-boot-websocket-chat-demo-svc
 
- ''' 
+docker service logs spring-boot-websocket-chat-demo-svc 
+''', execTimeout: 120000, flatten: false, makeEmptyDirs: false, noDefaultExcludes: false, patternSeparator: '[, ]+', remoteDirectory: '/home/devops/swarm', remoteDirectorySDF: false, removePrefix: '', sourceFiles: '')], usePromotionTimestamp: false, useWorkspaceInPromotion: false, verbose: false)])
+}
 	}
 }
 }
