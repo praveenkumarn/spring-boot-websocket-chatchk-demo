@@ -1,3 +1,4 @@
+version: '3'
 services:
   web:
     image: 172.31.44.24:8083/spring-boot-websocket-chat-demo:latest_$tym
