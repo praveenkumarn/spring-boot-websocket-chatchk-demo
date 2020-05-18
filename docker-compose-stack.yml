@@ -6,11 +6,11 @@ services:
     ports:
       - "8040:8080"
     networks:
-      - overlay
+      - epicnetwork
     deploy:
       replicas: 2
 
 networks:
-  overlay:
-    external:
-      name: epicnetwork
+  epicnetwork:
+    driver: overlay
+
