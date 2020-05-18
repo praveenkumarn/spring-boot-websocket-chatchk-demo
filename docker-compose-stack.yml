@@ -1,7 +1,7 @@
 version: '3'
 services:
   web:
-    image: 172.31.44.24:8083/spring-boot-websocket-chat-demo:latest_${JOB_NAME}_${BUILD_NUMBER}
+    image: 172.31.44.24:8083/spring-boot-websocket-chat-demo:latest_${JOBNAME}_${BUILDNUM}
     build: .
     ports:
       - "8040:8080"
